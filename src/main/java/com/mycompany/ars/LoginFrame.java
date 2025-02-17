@@ -5,6 +5,14 @@
 package com.mycompany.ars;
 
 import java.awt.Color;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -12,13 +20,14 @@ import java.awt.Color;
  */
 public class LoginFrame extends javax.swing.JFrame {
 
-    /**
-     * Creates new form LoginFrame
-     */
+    String url = "jdbc:mysql://localhost:3306/ars"; // Change DB name
+    String user = "root";  // Change username
+    String password = "12345678"; // Change password
+
     public LoginFrame() {
         initComponents();
         this.getContentPane().setBackground(Color.decode("#1e1d1a"));
-    }   
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -36,9 +45,9 @@ public class LoginFrame extends javax.swing.JFrame {
         Left = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
-        jTextField2 = new javax.swing.JTextField();
+        username = new javax.swing.JTextField();
         jLabel3 = new javax.swing.JLabel();
-        jPasswordField1 = new javax.swing.JPasswordField();
+        passwordInput = new javax.swing.JPasswordField();
         jButton1 = new javax.swing.JButton();
         jLabel4 = new javax.swing.JLabel();
         jButton2 = new javax.swing.JButton();
@@ -98,17 +107,17 @@ public class LoginFrame extends javax.swing.JFrame {
 
         jLabel2.setBackground(new java.awt.Color(255, 255, 255));
         jLabel2.setFont(new java.awt.Font("Segoe UI", 0, 16)); // NOI18N
-        jLabel2.setText("Email");
+        jLabel2.setText("Username");
 
-        jTextField2.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        username.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
 
         jLabel3.setBackground(new java.awt.Color(255, 255, 255));
         jLabel3.setFont(new java.awt.Font("Segoe UI", 0, 16)); // NOI18N
         jLabel3.setText("Password");
 
-        jPasswordField1.addActionListener(new java.awt.event.ActionListener() {
+        passwordInput.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jPasswordField1ActionPerformed(evt);
+                passwordInputActionPerformed(evt);
             }
         });
 
@@ -152,8 +161,8 @@ public class LoginFrame extends javax.swing.JFrame {
                     .addGroup(LeftLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                         .addComponent(jLabel2)
                         .addComponent(jLabel3)
-                        .addComponent(jTextField2)
-                        .addComponent(jPasswordField1)
+                        .addComponent(username)
+                        .addComponent(passwordInput)
                         .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 320, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addGap(39, 39, 39))
         );
@@ -165,11 +174,11 @@ public class LoginFrame extends javax.swing.JFrame {
                 .addGap(27, 27, 27)
                 .addComponent(jLabel2)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(username, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(jLabel3)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPasswordField1, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(passwordInput, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(65, 65, 65)
@@ -200,9 +209,9 @@ public class LoginFrame extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField1ActionPerformed
 
-    private void jPasswordField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jPasswordField1ActionPerformed
+    private void passwordInputActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_passwordInputActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_jPasswordField1ActionPerformed
+    }//GEN-LAST:event_passwordInputActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         // TODO add your handling code here:
@@ -214,12 +223,60 @@ public class LoginFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
-        Main main = new Main();
-        main.setVisible(true);
-        main.pack();
-        main.setLocationRelativeTo(null);
-        this.dispose();
+
+        String Username = username.getText();
+        String Password = passwordInput.getText();
+
+        if (Username.isEmpty() || Password.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please enter both Username and Password!", "Input Error", JOptionPane.ERROR_MESSAGE);
+            return; // Exit if fields are empty
+        }
+
+        try {
+            Connection con = null;
+            PreparedStatement pre = null;
+            ResultSet rs = null;
+
+            // Load MySQL Driver and establish connection
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            con = DriverManager.getConnection(url, user, password);
+
+            // SQL query to check admin credentials
+            String query = "SELECT * FROM admin WHERE AUsername = ? AND APassword = ?";
+            pre = con.prepareStatement(query);
+            pre.setString(1, Username);  // Set username
+            pre.setString(2, Password);  // Set password
+
+            // Execute query
+            rs = pre.executeQuery();
+
+            if (rs.next()) {
+                // Successful login – Open Main frame
+                JOptionPane.showMessageDialog(this, "Login successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
+
+                Main main = new Main();
+                main.setVisible(true);
+                main.pack();
+                main.setLocationRelativeTo(null);
+                this.dispose();  // Close current login window
+            } else {
+                // Invalid credentials
+                JOptionPane.showMessageDialog(this, "Invalid Username or Password!", "Login Failed", JOptionPane.ERROR_MESSAGE);
+            }
+
+            // Close resources
+            rs.close();
+            pre.close();
+            con.close();
+
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(LoginFrame.class.getName()).log(Level.SEVERE, null, ex);
+            JOptionPane.showMessageDialog(this, "Database Driver not found!", "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (SQLException ex) {
+            Logger.getLogger(LoginFrame.class.getName()).log(Level.SEVERE, null, ex);
+            JOptionPane.showMessageDialog(this, "Database connection error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+
     }//GEN-LAST:event_jButton1ActionPerformed
 
     /**
@@ -248,14 +305,14 @@ public class LoginFrame extends javax.swing.JFrame {
             java.util.logging.Logger.getLogger(LoginFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
-        
+
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 new LoginFrame().setVisible(true);
             }
-            
+
         });
     }
 
@@ -270,8 +327,8 @@ public class LoginFrame extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JPasswordField jPasswordField1;
     private javax.swing.JTextField jTextField1;
-    private javax.swing.JTextField jTextField2;
+    private javax.swing.JPasswordField passwordInput;
+    private javax.swing.JTextField username;
     // End of variables declaration//GEN-END:variables
 }
